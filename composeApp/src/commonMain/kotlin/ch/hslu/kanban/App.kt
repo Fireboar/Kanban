@@ -13,6 +13,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import ch.hslu.kanban.view.task.addTaskScreen.AddTaskScreen
+import ch.hslu.kanban.viewmodel.TaskViewModel
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -22,7 +24,9 @@ import kanban.composeapp.generated.resources.compose_multiplatform
 @Composable
 @Preview
 fun App() {
+    val taskViewModel = TaskViewModel()
     MaterialTheme {
-
+        AddTaskScreen(taskViewModel)
     }
 }
+
