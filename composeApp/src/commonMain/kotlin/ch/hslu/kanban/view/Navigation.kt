@@ -10,9 +10,10 @@ import ch.hslu.kanban.view.bars.BottomNavigationBar
 import ch.hslu.kanban.view.bars.TopBar
 import ch.hslu.kanban.view.task.addTaskScreen.AddTaskScreen
 import ch.hslu.kanban.view.task.kanBanScreen.KanbanScreen
+import ch.hslu.kanban.view.task.taskDetailScreen.TaskDetailScreen
 import ch.hslu.kanban.viewmodel.TaskViewModel
 
-enum class ScreenType { KANBAN, ADDTASK}
+enum class ScreenType { KANBAN, ADDTASK, TASKDETAIL}
 
 @Composable
 fun Navigation(taskViewModel: TaskViewModel) {
@@ -20,15 +21,20 @@ fun Navigation(taskViewModel: TaskViewModel) {
         mutableStateOf(ScreenType.KANBAN)
     }
 
-    fun navigateTo(screen: ScreenType) {
+    var currentTaskId by rememberSaveable { mutableStateOf<Long?>(null) }
+
+    fun navigateTo(screen: ScreenType, taskId: Long? = null) {
         currentScreen = screen
+        currentTaskId = taskId
     }
+
 
     Scaffold(
         topBar = {
             val screenTitle = when (currentScreen) {
                 ScreenType.KANBAN -> ""
                 ScreenType.ADDTASK -> "Aufgabe hinzufügen"
+                ScreenType.TASKDETAIL -> "Task-Details"
             }
             if(currentScreen != ScreenType.KANBAN){
                 TopBar(screenTitle)
@@ -47,13 +53,25 @@ fun Navigation(taskViewModel: TaskViewModel) {
 
             ScreenType.KANBAN -> KanbanScreen(
                 taskViewModel = taskViewModel,
-                paddingValues = paddingValues
+                paddingValues = paddingValues,
+                onTaskClick = { task -> navigateTo(ScreenType.TASKDETAIL, task.id) }
             )
 
             ScreenType.ADDTASK -> AddTaskScreen(
                 taskViewModel = taskViewModel,
                 paddingValues = paddingValues
             )
+
+            ScreenType.TASKDETAIL -> currentTaskId?.let { taskId ->
+                TaskDetailScreen(
+                    taskId = taskId,
+                    taskViewModel = taskViewModel,
+                    paddingValues = paddingValues,
+                    onNavigateBack = { navigateTo(ScreenType.KANBAN) }
+                )
+            }
+
+
 
         }
     }

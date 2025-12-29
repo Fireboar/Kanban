@@ -1,5 +1,6 @@
 package ch.hslu.kanban.view.task.kanBanScreen
 
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,13 +34,18 @@ fun DraggableTaskItem(
     task: Task,
     columnWidthDp: Dp,
     onDelete: () -> Unit,
-    onMove: (targetStatus: String) -> Unit
+    onMove: (targetStatus: String) -> Unit,
+    onClick: () -> Unit
 ) {
     var offset by remember { mutableStateOf(Offset.Zero) }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = null
+            )
             .offset { IntOffset(offset.x.roundToInt(), offset.y.roundToInt()) }
             .pointerInput(task.id) {
                 detectDragGestures(

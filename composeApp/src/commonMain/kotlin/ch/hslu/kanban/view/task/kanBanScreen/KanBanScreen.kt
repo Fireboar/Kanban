@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import ch.hslu.kanban.domain.entity.Task
 import ch.hslu.kanban.model.toLocalDateTimeOrNull
 import ch.hslu.kanban.viewmodel.TaskViewModel
 
@@ -32,7 +33,8 @@ val statuses = listOf("To Do", "In Progress", "Done")
 @Composable
 fun KanbanScreen(
     taskViewModel: TaskViewModel,
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
+    onTaskClick: (Task) -> Unit
 ) {
     val tasks by taskViewModel.tasks.collectAsState()
 
@@ -108,7 +110,8 @@ fun KanbanScreen(
                                 onDelete = { taskViewModel.deleteTask(task) },
                                 onMove = {
                                         targetStatus -> taskViewModel.moveTask(task, targetStatus)
-                                }
+                                },
+                                onClick = { onTaskClick(task) }
                             )
                         }
                     }
