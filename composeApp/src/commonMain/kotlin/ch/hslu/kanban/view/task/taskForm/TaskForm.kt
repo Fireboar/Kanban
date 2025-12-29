@@ -22,7 +22,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import ch.hslu.kanban.domain.entity.Task
 import ch.hslu.kanban.viewmodel.TaskViewModel
@@ -48,6 +55,8 @@ fun TaskForm(
 
     var error by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
+
+    val dateFocus = remember { FocusRequester() }
 
     fun submit() {
         if (title.isBlank()) {
@@ -90,8 +99,6 @@ fun TaskForm(
         }
     }
 
-    // Folgender Code
-
     Column(
         modifier = Modifier
             .padding(16.dp)
@@ -102,7 +109,8 @@ fun TaskForm(
             value = title,
             onValueChange = { title = it },
             label = { Text("Titel") },
-            modifier = Modifier.fillMaxWidth().padding(8.dp)
+            modifier = Modifier.fillMaxWidth().padding(8.dp),
+            singleLine = true
         )
 
         OutlinedTextField(
@@ -110,6 +118,12 @@ fun TaskForm(
             onValueChange = { description = it },
             label = { Text("Beschreibung") },
             modifier = Modifier.fillMaxWidth().padding(8.dp)
+                .onPreviewKeyEvent { event ->
+                    if (event.type == KeyEventType.KeyDown && event.key == Key.Tab) {
+                        dateFocus.requestFocus()
+                        true
+                    } else false
+                },
         )
 
         OutlinedTextField(
@@ -117,6 +131,8 @@ fun TaskForm(
             onValueChange = { dueDate = it },
             label = { Text("Fälligkeitsdatum (dd.mm.jjjj)") },
             modifier = Modifier.fillMaxWidth().padding(8.dp)
+                .focusRequester(dateFocus),
+            singleLine = true
         )
 
         OutlinedTextField(
@@ -124,6 +140,13 @@ fun TaskForm(
             onValueChange = { dueTime = it },
             label = { Text("Fälligkeitszeit (hh:mm)") },
             modifier = Modifier.fillMaxWidth().padding(8.dp)
+                .onPreviewKeyEvent { event ->
+                    if (event.type == KeyEventType.KeyDown && event.key == Key.Enter) {
+                        submit()
+                        true
+                    } else false
+                },
+            singleLine = true
         )
 
         // ---- Status Dropdown ----
