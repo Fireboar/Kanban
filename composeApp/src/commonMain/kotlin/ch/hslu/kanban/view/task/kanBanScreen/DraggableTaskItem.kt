@@ -1,0 +1,93 @@
+package ch.hslu.kanban.view.task.kanBanScreen
+
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import ch.hslu.kanban.domain.entity.Task
+import ch.hslu.kanban.view.buttons.DeleteButton
+import kotlin.math.roundToInt
+
+@Composable
+fun DraggableTaskItem(
+    task: Task,
+    columnWidthDp: Dp,
+    onDelete: () -> Unit,
+    onMove: (targetStatus: String) -> Unit
+) {
+    var offset by remember { mutableStateOf(Offset.Zero) }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .offset { IntOffset(offset.x.roundToInt(), offset.y.roundToInt()) }
+            .pointerInput(task.id) {
+                detectDragGestures(
+                    onDrag = { _, dragAmount -> offset += dragAmount },
+                    onDragEnd = {
+                        val startIndex = statuses.indexOf(task.status)
+                        val delta = (offset.x / columnWidthDp.value).toInt()
+                        val columnIndex = (startIndex + delta)
+                            .coerceIn(0, statuses.lastIndex)
+                        val targetStatus = statuses[columnIndex]
+                        if (targetStatus != task.status) onMove(targetStatus)
+                        offset = Offset.Zero
+                    }
+                )
+            },
+        shape = RoundedCornerShape(12.dp), // Runde Ecken
+        colors = CardDefaults.cardColors(containerColor = when (task.status) {
+            "To Do" -> Color(0xFF90CAF9)
+            "In Progress" -> Color(0xFFFFF9C4)
+            "Done" -> Color(0xFFC8E6C9)
+            else -> MaterialTheme.colorScheme.surface
+        }),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp) // Schatten
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(task.title, maxLines = 1)
+                task.description?.let {
+                    Text(it, maxLines = 1,
+                        style = MaterialTheme.typography.bodySmall)
+                }
+                Text("${task.dueDate} ${task.dueTime}",
+                    style = MaterialTheme.typography.bodySmall)
+            }
+            DeleteButton(
+                onDelete = { onDelete() },
+                title = "Task löschen",
+                text = "Möchtest du den Task wirklich löschen?"
+            )
+        }
+
+
+    }
+
+}
+

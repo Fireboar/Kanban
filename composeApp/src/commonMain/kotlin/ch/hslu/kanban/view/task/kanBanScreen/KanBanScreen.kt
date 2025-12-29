@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import ch.hslu.kanban.model.toLocalDateTimeOrNull
 import ch.hslu.kanban.viewmodel.TaskViewModel
 
 val statuses = listOf("To Do", "In Progress", "Done")
@@ -97,17 +98,18 @@ fun KanbanScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(
-                            items = tasks.filter { it.status == status }
+                            items = tasks
+                                .filter { it.status == status }
+                                .sortedBy { it.toLocalDateTimeOrNull() }
                         ) { task ->
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Text(
-                                    text = task.title,
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                task.description?.let { Text(text = it) }
-                                Text(text = task.dueDate)
-                                Text(text = task.dueTime)
-                            }
+                            DraggableTaskItem(
+                                task = task,
+                                columnWidthDp = columnWidth.takeIf { !isWideScreen } ?: 300.dp,
+                                onDelete = { taskViewModel.deleteTask(task) },
+                                onMove = {
+                                        targetStatus -> taskViewModel.moveTask(task, targetStatus)
+                                }
+                            )
                         }
                     }
 
