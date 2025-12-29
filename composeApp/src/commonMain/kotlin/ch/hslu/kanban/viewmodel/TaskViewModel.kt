@@ -1,48 +1,68 @@
 package ch.hslu.kanban.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import ch.hslu.kanban.domain.entity.Task
+import ch.hslu.kanban.domain.repository.TaskRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
-class TaskViewModel () : ViewModel(){
+class TaskViewModel (private val taskRepository: TaskRepository) : ViewModel() {
     private val _tasks = MutableStateFlow<List<Task>>(emptyList())
     val tasks: StateFlow<List<Task>> = _tasks
 
-    private var nextId = 0L
-
-    fun addTask(
-        title: String,
-        description: String?,
-        dueDate: String,
-        dueTime: String,
-        status: String? = "To Do"
-    ) {
-        val task = Task(
-            title = title,
-            description = description,
-            dueDate = dueDate,
-            dueTime = dueTime,
-            status = status,
-            id = nextId++
-        )
-        _tasks.value = _tasks.value + task
+    init {
+        loadTasks()
     }
 
-    fun updateTask(updatedTask: Task) {
-        _tasks.value = _tasks.value.map { task ->
-            if (task.id == updatedTask.id) updatedTask else task
+    fun addTask(title: String, description: String?, dueDate: String, dueTime: String, status: String?) {
+        viewModelScope.launch {
+            val task = Task(
+                id = 0,
+                title = title,
+                description = description,
+                dueDate = dueDate,
+                dueTime = dueTime,
+                status = status ?: "To Do"
+            )
+            addTask(task)
+        }
+    }
+
+    fun addTask(task: Task) {
+        viewModelScope.launch {
+            taskRepository.addTask(task)
+            loadTasks()
+        }
+    }
+
+    fun loadTasks() {
+        viewModelScope.launch {
+            val loadedTasks = taskRepository.getLocalTasks()
+            _tasks.value = loadedTasks.toList()
+        }
+    }
+
+    fun updateTask(task: Task){
+        viewModelScope.launch {
+            taskRepository.updateTask(task)
+            loadTasks()
+        }
+    }
+
+    fun moveTask(task: Task, newStatus: String) {
+        viewModelScope.launch {
+            val updatedTask = task.copy(status = newStatus)
+            taskRepository.updateTask(updatedTask)
+            loadTasks()
         }
     }
 
     fun deleteTask(task: Task) {
-        _tasks.value = _tasks.value - task
-    }
-
-    fun moveTask(task: Task, targetStatus: String) {
-        val updatedTask = task.copy(status = targetStatus)
-        _tasks.value = _tasks.value.map {
-            if (it.id == task.id) updatedTask else it
+        viewModelScope.launch {
+            taskRepository.deleteTask(task)
+            loadTasks()
         }
     }
 
