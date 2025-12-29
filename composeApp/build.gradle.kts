@@ -57,6 +57,7 @@ kotlin {
             implementation(projects.shared)
 
             implementation(libs.kotlinx.datetime)
+            implementation(libs.compose.material.icons.extended)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

@@ -2,6 +2,7 @@ package ch.hslu.kanban.view.task.addTaskScreen
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,7 +22,7 @@ import ch.hslu.kanban.view.task.taskForm.TaskForm
 import ch.hslu.kanban.viewmodel.TaskViewModel
 
 @Composable
-fun AddTaskScreen(taskViewModel: TaskViewModel) {
+fun AddTaskScreen(taskViewModel: TaskViewModel, paddingValues: PaddingValues) {
     Box(
         modifier = Modifier
             .fillMaxSize(),
@@ -30,6 +31,7 @@ fun AddTaskScreen(taskViewModel: TaskViewModel) {
         Column(
             modifier = Modifier
                 .widthIn(max = 480.dp)
+                .padding(paddingValues)
         ) {
             TaskForm(
                 taskViewModel = taskViewModel,
@@ -45,30 +47,6 @@ fun AddTaskScreen(taskViewModel: TaskViewModel) {
                 },
                 onNavigateBack = { }
             )
-
-            val tasks by taskViewModel.tasks.collectAsState()
-
-            tasks.forEach { task ->
-                Card(
-                    modifier = Modifier
-                        .padding(bottom = 12.dp)
-                        .fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFE0F7FA)
-                    )
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            text = task.title,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        task.description?.let { Text(text = it) }
-                        Text(text = task.dueDate)
-                        Text(text = task.dueTime)
-                    }
-                }
-            }
-
 
         }
     }
