@@ -7,5 +7,7 @@ class DatabaseProvider(driver: SqlDriver) {
 
     val tasksQueries get() = database.tasksQueries
     val commonQueries get() = database.commonQueries
+
+    val usersQueries get() = database.usersQueries
 }
 

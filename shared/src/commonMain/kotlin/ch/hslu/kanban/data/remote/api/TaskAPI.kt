@@ -2,9 +2,11 @@ package ch.hslu.kanban.data.remote.api
 
 import ch.hslu.kanban.SERVER_IP
 import ch.hslu.kanban.domain.entity.Task
+import ch.hslu.kanban.domain.entity.serverRequests.Token
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
@@ -14,32 +16,35 @@ import io.ktor.http.contentType
 
 class TaskApi() {
 
-    suspend fun getTasks(): List<Task> {
+    suspend fun getTasks(token: Token): List<Task> {
         return try {
-            ApiClient.client.get("${SERVER_IP}/tasks").body<List<Task>>()
+            ApiClient.client.get("$SERVER_IP/tasks") {
+                header("Authorization", "Bearer ${token.value}")
+            }.body<List<Task>>()  // Typ explizit angeben
         } catch (e: Throwable) {
             e.printStackTrace()
             emptyList()
         }
     }
 
-    suspend fun addTask(task: Task):Boolean {
+    suspend fun addTask(token:Token, task: Task):Boolean {
         return try {
-            val response = ApiClient.client.post("${SERVER_IP}/tasks") {
+            val response = ApiClient.client.post("$SERVER_IP/tasks") {
+                header("Authorization", "Bearer ${token.value}")
                 contentType(ContentType.Application.Json)
                 setBody(task)
             }
-            return response.status == HttpStatusCode.Created
-                    || response.status == HttpStatusCode.OK
+            return response.status == HttpStatusCode.Created || response.status == HttpStatusCode.OK
         } catch (e: Throwable) {
             e.printStackTrace()
             false
         }
     }
 
-    suspend fun updateTask(task: Task) :Boolean {
+    suspend fun updateTask(token:Token, task: Task) :Boolean {
         return try {
-            val response = ApiClient.client.put("${SERVER_IP}/tasks/${task.id}") {
+            val response = ApiClient.client.put("$SERVER_IP/tasks/${task.id}") {
+                header("Authorization", "Bearer ${token.value}")
                 contentType(ContentType.Application.Json)
                 setBody(task)
             }
@@ -50,9 +55,11 @@ class TaskApi() {
         }
     }
 
-    suspend fun deleteTask(id: Long): Boolean {
+    suspend fun deleteTask(token:Token, id: Long): Boolean {
         return try {
-            val response = ApiClient.client.delete("${SERVER_IP}/tasks/$id")
+            val response = ApiClient.client.delete("$SERVER_IP/tasks/$id"){
+                header("Authorization", "Bearer ${token.value}")
+            }
             response.status == HttpStatusCode.OK
         } catch (e: Throwable) {
             e.printStackTrace()
@@ -60,9 +67,10 @@ class TaskApi() {
         }
     }
 
-    suspend fun replaceTasks(tasks: List<Task>): Boolean {
+    suspend fun replaceTasks(token:Token, tasks: List<Task>): Boolean {
         return try {
-            val response = ApiClient.client.post("${SERVER_IP}/tasks/replace") {
+            val response = ApiClient.client.post("$SERVER_IP/tasks/replace") {
+                header("Authorization", "Bearer ${token.value}")
                 contentType(ContentType.Application.Json)
                 setBody(tasks)
             }
