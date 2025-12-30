@@ -3,6 +3,7 @@ package ch.hslu.kanban.view.bars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -18,7 +19,7 @@ fun BottomNavigationBar(
     onNavigate: (ScreenType) -> Unit
 ) {
     NavigationBar(
-        containerColor = Color(0xFF1E88E5)
+        containerColor = Color(0xFF1E88E5),
     ) {
         NavigationBarItem(
             selected = currentScreen == ScreenType.KANBAN,
@@ -39,6 +40,13 @@ fun BottomNavigationBar(
                 "neue Aufgabe",
                 fontSize = 14.sp,
                 color = Color.White) }
+        )
+
+        NavigationBarItem(
+            selected = currentScreen == ScreenType.USER,
+            onClick = { onNavigate(ScreenType.USER) },
+            icon = { Icon(Icons.Filled.Person, contentDescription = "User") },
+            label = { Text("User", fontSize = 14.sp, color = Color.White) },
         )
     }
 }

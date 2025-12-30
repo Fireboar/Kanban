@@ -22,7 +22,7 @@ import ch.hslu.kanban.view.task.taskForm.TaskForm
 import ch.hslu.kanban.viewmodel.TaskViewModel
 
 @Composable
-fun AddTaskScreen(taskViewModel: TaskViewModel, paddingValues: PaddingValues) {
+fun AddTaskScreen(taskViewModel: TaskViewModel) {
     Box(
         modifier = Modifier
             .fillMaxSize(),
@@ -31,7 +31,6 @@ fun AddTaskScreen(taskViewModel: TaskViewModel, paddingValues: PaddingValues) {
         Column(
             modifier = Modifier
                 .widthIn(max = 480.dp)
-                .padding(paddingValues)
         ) {
             TaskForm(
                 taskViewModel = taskViewModel,
