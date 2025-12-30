@@ -1,4 +1,4 @@
-package ch.hslu.kanban.view.task.taskDetailScreen
+package ch.hslu.kanban.view.user.userScreen
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -6,19 +6,24 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import ch.hslu.kanban.view.task.taskForm.TaskForm
+import ch.hslu.kanban.view.sync.SyncSection
+import ch.hslu.kanban.viewmodel.SyncViewModel
 import ch.hslu.kanban.viewmodel.TaskViewModel
 
 @Composable
-fun TaskDetailScreen(
-    taskId: Long,
+fun UserScreen(
     taskViewModel: TaskViewModel,
-    onNavigateBack: () -> Unit
+    syncViewModel: SyncViewModel
 ) {
+    val scrollState = rememberScrollState()
+    val isServerOnline = syncViewModel.isServerOnline.value
+
     Box(
         modifier = Modifier
             .fillMaxSize(),
@@ -27,17 +32,11 @@ fun TaskDetailScreen(
         Column(
             modifier = Modifier
                 .widthIn(max = 480.dp)
+                .verticalScroll(scrollState)
         ) {
-            TaskForm(
-                taskId = taskId,
-                taskViewModel = taskViewModel,
-                buttonText = "Speichern",
-                onSubmit = { task ->
-                    taskViewModel.updateTask(task)
-                },
-                onNavigateBack = onNavigateBack
-            )
+            if (isServerOnline) {
+                SyncSection(taskViewModel)
+            }
         }
     }
 }
-

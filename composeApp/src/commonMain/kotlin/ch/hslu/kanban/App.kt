@@ -11,13 +11,17 @@ import ch.hslu.kanban.data.local.database.AppDatabase
 import ch.hslu.kanban.data.local.database.DatabaseProvider
 import ch.hslu.kanban.data.local.database.TaskDao
 import ch.hslu.kanban.data.local.database.provideDbDriver
+import ch.hslu.kanban.data.remote.api.TaskApi
 import ch.hslu.kanban.domain.repository.TaskRepository
+import ch.hslu.kanban.network.SyncService
 import ch.hslu.kanban.view.Navigation
+import ch.hslu.kanban.viewmodel.SyncViewModel
 import ch.hslu.kanban.viewmodel.TaskViewModel
 
 @Composable
 fun App() {
     var taskViewModel by remember { mutableStateOf<TaskViewModel?>(null) }
+    var syncViewModel by remember { mutableStateOf<SyncViewModel?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
@@ -29,13 +33,26 @@ fun App() {
             database.commonQueries
         )
 
-        val taskRepository = TaskRepository(taskDao)
+        val taskApi = TaskApi()
 
-        taskViewModel = TaskViewModel(taskRepository)
+        val syncService = SyncService(taskApi,taskDao)
+
+        val taskRepository = TaskRepository(
+            taskDao,
+            taskApi,
+            syncService
+        )
+
+        syncViewModel = SyncViewModel(syncService)
+
+        taskViewModel = TaskViewModel(
+            taskRepository,
+            syncViewModel = syncViewModel!!,
+            syncService = syncService
+        )
 
         isLoading = false
     }
-
 
     if (!isLoading) {
         /*// Beispiel-Tasks
@@ -50,7 +67,8 @@ fun App() {
 
         MaterialTheme {
             Navigation(
-                taskViewModel = taskViewModel!!
+                taskViewModel = taskViewModel!!,
+                syncViewModel = syncViewModel!!
             )
         }
     }

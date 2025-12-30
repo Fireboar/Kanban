@@ -33,7 +33,6 @@ val statuses = listOf("To Do", "In Progress", "Done")
 @Composable
 fun KanbanScreen(
     taskViewModel: TaskViewModel,
-    paddingValues: PaddingValues,
     onTaskClick: (Task) -> Unit
 ) {
     val tasks by taskViewModel.tasks.collectAsState()
@@ -41,7 +40,6 @@ fun KanbanScreen(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .padding(paddingValues)
     ) {
         val screenWidth = maxWidth
         val isWideScreen = screenWidth >= 900.dp
@@ -55,7 +53,7 @@ fun KanbanScreen(
         }
 
         Row(
-            modifier = rowModifier.padding(16.dp),
+            modifier = rowModifier.padding(16.dp,16.dp,16.dp,0.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             statuses.forEach { status ->
