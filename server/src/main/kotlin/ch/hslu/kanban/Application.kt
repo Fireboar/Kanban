@@ -7,6 +7,7 @@ import ch.hslu.kanban.data.local.database.TaskDao
 import ch.hslu.kanban.data.local.database.UserDao
 import ch.hslu.kanban.data.local.database.provideDbDriver
 import ch.hslu.kanban.domain.entity.Task
+import ch.hslu.kanban.routes.authRoutes
 import ch.hslu.kanban.routes.commonRoutes
 import ch.hslu.kanban.routes.taskRoutes
 import ch.hslu.kanban.routes.userRoutes
@@ -57,7 +58,7 @@ suspend fun Application.module() {
             realm = JwtConfig.realm
             verifier(JwtConfig.verifier())
             validate { credential ->
-                val userId = credential.payload.getClaim("userId").asInt()
+                val userId = credential.payload.getClaim("userId").asLong()
                 if (userId != null) JWTPrincipal(credential.payload) else null
             }
         }
@@ -88,6 +89,7 @@ suspend fun Application.module() {
     // Routes
     taskRoutes(taskDao)
     commonRoutes()
+    authRoutes(userDao,passwordService)
     userRoutes(userDao, passwordService)
 }
 

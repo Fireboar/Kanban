@@ -90,7 +90,8 @@ fun App() {
         taskViewModel = TaskViewModel(
             taskRepository,
             syncViewModel = syncViewModel!!,
-            syncService = syncService
+            syncService = syncService,
+            userViewModel = userViewModel!!
         )
 
         isLoading = false

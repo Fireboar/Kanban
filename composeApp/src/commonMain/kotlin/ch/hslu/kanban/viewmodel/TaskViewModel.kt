@@ -12,13 +12,19 @@ import kotlinx.coroutines.launch
 class TaskViewModel (
     private val taskRepository: TaskRepository,
     private val syncViewModel: SyncViewModel,
-    private val syncService: SyncService
+    private val syncService: SyncService,
+    private val userViewModel: UserViewModel
 ) : ViewModel() {
     private val _tasks = MutableStateFlow<List<Task>>(emptyList())
     val tasks: StateFlow<List<Task>> = _tasks
 
     init {
         loadTasks()
+        viewModelScope.launch {
+            userViewModel.currentUser.collect { user ->
+                loadTasks()
+            }
+        }
     }
 
     fun addTask(

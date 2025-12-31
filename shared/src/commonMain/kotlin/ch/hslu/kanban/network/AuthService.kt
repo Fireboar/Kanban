@@ -29,6 +29,8 @@ class AuthService(
 
         tokenStorage.saveToken(token.value)
 
+        println("AUTHSERVICE SAVES: ${token.value}")
+
         val user = extractUserFromToken(token.value) ?: return false
         userStorage.saveUser(user)
 

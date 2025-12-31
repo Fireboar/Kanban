@@ -40,6 +40,7 @@ class SyncService(
 
     private inline fun <T> withSession(block: (token: Token, userId: Long) -> T): T? {
         val token = authService.token ?: return null
+        println("SyncService gets token: ${token.value}")
         val userId = authService.currentUser?.userId ?: return null
         return block(token, userId)
     }
