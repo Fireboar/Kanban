@@ -10,17 +10,19 @@ class TaskDao(
     private val taskQueries: TasksQueries,
     private val commonQueries: CommonQueries
 ) {
-    suspend fun getAll(): List<Task> =
-        taskQueries.selectAllTasks( TaskMapper::map)
+    suspend fun getAll(userId: Long): List<Task> =
+        taskQueries.selectAllTasks(userId, TaskMapper::map)
             .awaitAsList()
 
-    suspend fun getById(taskId: Long): Task? =
-        taskQueries.selectTaskById(taskId, TaskMapper::map)
+    suspend fun getById(userId: Long, taskId: Long): Task? =
+        taskQueries.selectTaskById(taskId, userId, TaskMapper::map)
             .awaitAsOneOrNull()
+
 
     suspend fun insert(task: Task): Task =
         taskQueries.transactionWithResult {
             taskQueries.insertTask(
+                userId = task.userId,
                 title = task.title,
                 description = task.description,
                 dueDate = task.dueDate,
@@ -30,13 +32,17 @@ class TaskDao(
 
             val newId = commonQueries.lastInsertRowId().awaitAsOne()
 
-            taskQueries.selectTaskById(newId,TaskMapper::map)
+            taskQueries.selectTaskById(
+                newId,
+                task.userId,
+                TaskMapper::map)
                 .awaitAsOne()
         }
 
     suspend fun update(task: Task) =
         taskQueries.updateTask(
             id = task.id,
+            userId = task.userId,
             title = task.title,
             description = task.description,
             dueDate = task.dueDate,
@@ -47,6 +53,7 @@ class TaskDao(
     suspend fun upsert(task: Task) =
         taskQueries.insertOrReplaceTask(
             id = task.id,
+            userId = task.userId,
             title = task.title,
             description = task.description,
             dueDate = task.dueDate,
@@ -54,15 +61,16 @@ class TaskDao(
             status = task.status
         )
 
-    suspend fun delete(taskId: Long) =
-        taskQueries.deleteTaskById(taskId)
+    suspend fun delete(taskId: Long, userId: Long) =
+        taskQueries.deleteTaskById(taskId, userId)
 
-    suspend fun replaceAll(tasks: List<Task>) =
+    suspend fun replaceAll(userId: Long, tasks: List<Task>) =
         taskQueries.transaction {
-            taskQueries.deleteAllTasks()
+            taskQueries.deleteAllTasks(userId)
             tasks.forEach { task ->
                 taskQueries.insertOrReplaceTask(
                     id = task.id,
+                    userId = userId,
                     title = task.title,
                     description = task.description,
                     dueDate = task.dueDate,
@@ -71,4 +79,5 @@ class TaskDao(
                 )
             }
         }
+
 }

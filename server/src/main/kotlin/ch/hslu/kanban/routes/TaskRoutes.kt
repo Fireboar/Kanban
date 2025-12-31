@@ -4,6 +4,9 @@ import ch.hslu.kanban.data.local.database.TaskDao
 import ch.hslu.kanban.domain.entity.Task
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
+import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.delete
@@ -14,98 +17,124 @@ import io.ktor.server.routing.routing
 
 fun Application.taskRoutes(taskDao: TaskDao) {
     routing {
-        // CREATE
-        post("/tasks") {
-            val task = call.receive<Task>()
+        authenticate("auth-jwt") {
+            // Create
+            post("/tasks") {
+                val principal = call.principal<JWTPrincipal>()
+                    ?: return@post call.respond(HttpStatusCode.Unauthorized)
 
-            // Upsert in Datenbank
-            val insertedTask = taskDao.upsert(task)
+                val userId = principal.payload.getClaim("userId").asLong()
 
-            // Response
-            call.respond(HttpStatusCode.OK, insertedTask)
-        }
+                val taskFromClient = call.receive<Task>()
 
-        // READ ALL
-        get("/tasks") {
-            // Datenbank lesen
-            val tasks = taskDao.getAll()
+                // userId erzwingen
+                val task = taskFromClient.copy(userId = userId)
 
-            // Response
-            call.respond(tasks)
-        }
-
-        // UPDATE
-        put("/tasks/{id}") {
-            // ID aus URL
-            val taskId = call.parameters["id"]?.toLongOrNull()
-                ?: return@put call.respond(
-                    HttpStatusCode.BadRequest,
-                    "Invalid task ID")
-
-            // Task aus Request Body
-            val updatedTaskData = call.receive<Task>()
-
-            // Existenz prüfen
-            val existingTask = taskDao.getById(taskId)
-            if (existingTask == null) {
-                return@put call.respond(
-                    HttpStatusCode.NotFound,
-                    "Task with id=$taskId not found")
+                val insertedTask = taskDao.upsert(task)
+                call.respond(HttpStatusCode.OK, insertedTask)
             }
 
-            // ID aus URL setzen
-            val taskToUpdate = updatedTaskData.copy(
-                id = taskId
-            )
+            // Read All
+            get("/tasks") {
+                val principal = call.principal<JWTPrincipal>()
+                val userId = principal!!.payload.getClaim("userId").asLong()
 
-            // Update in DB
-            taskDao.update(taskToUpdate)
-
-            // Response
-            call.respond(HttpStatusCode.OK, taskToUpdate)
-        }
-
-        // DELETE
-        delete("/tasks/{id}") {
-            // ID aus URL
-            val taskId = call.parameters["id"]?.toLongOrNull()
-                ?: return@delete call.respond(
-                    HttpStatusCode.BadRequest,
-                    "Invalid task ID")
-
-            // Existenz prüfen
-            val existingTask = taskDao.getById(taskId)
-            if (existingTask == null) {
-                return@delete call.respond(
-                    HttpStatusCode.NotFound,
-                    "Task not found")
+                val tasks = taskDao.getAll(userId = userId)
+                call.respond(tasks)
             }
 
-            // Task löschen
-            taskDao.delete(
-                taskId = existingTask.id
-            )
+            // Update
+            put("/tasks/{id}") {
+                val principal = call.principal<JWTPrincipal>()
+                    ?: return@put call.respond(
+                        HttpStatusCode.Unauthorized,
+                        "Not authenticated")
 
-            // Response
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf("message" to "Deleted task $taskId"))
-        }
+                val userId = principal.payload.getClaim("userId").asLong()
 
+                // ID aus URL
+                val taskId = call.parameters["id"]?.toLongOrNull()
+                    ?: return@put call.respond(
+                        HttpStatusCode.BadRequest,
+                        "Invalid task ID")
 
+                // Task aus Request Body
+                val updatedTaskData = call.receive<Task>()
 
-        // REPLACE
-        post("/tasks/replace") {
-            // Tasks aus Request Body
-            val tasks = call.receive<List<Task>>()
+                // Existenz prüfen
+                val existingTask = taskDao.getById(userId, taskId)
+                if (existingTask == null) {
+                    return@put call.respond(
+                        HttpStatusCode.NotFound,
+                        "Task with id=$taskId not found")
+                }
 
-            // Dao Replace
-            taskDao.replaceAll(tasks)
+                // userId aus JWT erzwingen & ID aus URL setzen
+                val taskToUpdate = updatedTaskData.copy(
+                    id = taskId,
+                    userId = userId
+                )
 
-            // Response
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf("message" to "Tasks replaced successfully"))
+                // Update in DB
+                taskDao.update(taskToUpdate)
+
+                call.respond(HttpStatusCode.OK, taskToUpdate)
+            }
+
+            // Delete
+            delete("/tasks/{id}") {
+                val principal = call.principal<JWTPrincipal>()
+                    ?: return@delete call.respond(
+                        HttpStatusCode.Unauthorized,
+                        "Not authenticated")
+
+                val userId = principal.payload.getClaim("userId").asLong()
+
+                // ID aus URL prüfen
+                val taskId = call.parameters["id"]?.toLongOrNull()
+                    ?: return@delete call.respond(
+                        HttpStatusCode.BadRequest,
+                        "Invalid task ID")
+
+                // Existenz prüfen
+                val existingTask = taskDao.getById(userId, taskId)
+                if (existingTask == null) {
+                    return@delete call.respond(
+                        HttpStatusCode.NotFound,
+                        "Task not found")
+                }
+
+                // Task löschen
+                taskDao.delete(
+                    taskId = existingTask.id,
+                    userId = userId
+                )
+
+                call.respond(
+                    HttpStatusCode.OK,
+                    mapOf("message" to "Deleted task $taskId"))
+            }
+
+            // Replace
+            post("/tasks/replace") {
+                val principal = call.principal<JWTPrincipal>()
+                    ?: return@post call.respond(
+                        HttpStatusCode.Unauthorized,
+                        "Not authenticated")
+
+                val userId = principal.payload.getClaim("userId").asLong()
+
+                // Tasks aus Request Body
+                val tasksFromClient = call.receive<List<Task>>()
+
+                // Alle Tasks für diesen User ersetzen
+                taskDao.replaceAll(userId, tasksFromClient)
+
+                call.respond(
+                    HttpStatusCode.OK,
+                    mapOf("message" to "Tasks replaced successfully"))
+            }
+
         }
     }
 }

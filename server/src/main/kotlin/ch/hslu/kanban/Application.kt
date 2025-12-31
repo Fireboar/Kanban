@@ -4,14 +4,21 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import ch.hslu.kanban.data.local.database.AppDatabase
 import ch.hslu.kanban.data.local.database.DatabaseProvider
 import ch.hslu.kanban.data.local.database.TaskDao
+import ch.hslu.kanban.data.local.database.UserDao
 import ch.hslu.kanban.data.local.database.provideDbDriver
 import ch.hslu.kanban.domain.entity.Task
 import ch.hslu.kanban.routes.commonRoutes
 import ch.hslu.kanban.routes.taskRoutes
+import ch.hslu.kanban.routes.userRoutes
+import ch.hslu.kanban.security.JwtConfig
+import ch.hslu.kanban.security.PasswordService
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.*
+import io.ktor.server.auth.Authentication
+import io.ktor.server.auth.jwt.JWTPrincipal
+import io.ktor.server.auth.jwt.jwt
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -40,12 +47,27 @@ suspend fun Application.module() {
         allowMethod(HttpMethod.Put)
         allowMethod(HttpMethod.Delete)
         allowMethod(HttpMethod.Options)
+        allowHeader(HttpHeaders.Authorization)
+        allowCredentials = true
+    }
+
+    install(Authentication) {
+        jwt("auth-jwt") {
+            realm = JwtConfig.realm
+            verifier(JwtConfig.verifier())
+            validate { credential ->
+                val userId = credential.payload.getClaim("userId").asInt()
+                if (userId != null) JWTPrincipal(credential.payload) else null
+            }
+        }
     }
 
     // Database
     val driver = provideDbDriver(AppDatabase.Schema)
     val database = DatabaseProvider(driver)
 
+    // PasswordService
+    val passwordService = PasswordService()
 
     // DAOs
     val taskDao = TaskDao(
@@ -53,21 +75,38 @@ suspend fun Application.module() {
         database.commonQueries
     )
 
+    val userDao = UserDao(
+        database.usersQueries,
+        database.commonQueries,
+        passwordService
+    )
+
     // Beispiel Tasks
-    seedTasks(taskDao)
+    seedUserAndTask(userDao, taskDao)
 
-    // TaskRoutes
+    // Routes
     taskRoutes(taskDao)
+    commonRoutes(userDao, passwordService)
+    userRoutes(userDao, passwordService)
 
-    // CommonRoutes
-    commonRoutes()
 }
 
-suspend fun seedTasks(taskDao: TaskDao) {
-    val tasks = taskDao.getAll()
+suspend fun seedUserAndTask(userDao:UserDao, taskDao: TaskDao) {
+    // Beispiel
+    // User
+    val existingUser = userDao.getByUsername("admin")
+    val adminId = existingUser?.id ?: userDao.insert(
+        username = "admin",
+        password = "123",
+        role = "ADMIN"
+    )
+
+    // Task
+    val tasks = taskDao.getAll(adminId)
     if (tasks.isEmpty()) {
         val defaultTask = Task(
-            id = 0, // DB setzt Auto-Increment
+            id = 0,
+            userId = adminId,
             title = "Server-Task",
             description = "Dies ist ein Default-Task",
             dueDate = "12.12.2025",
@@ -77,3 +116,4 @@ suspend fun seedTasks(taskDao: TaskDao) {
         taskDao.insert(defaultTask)
     }
 }
+

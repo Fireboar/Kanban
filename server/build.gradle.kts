@@ -40,4 +40,9 @@ dependencies {
     // Web
     implementation(libs.ktor.server.cors)
 
+    // Security
+    implementation(libs.ktor.server.auth)
+    implementation(libs.ktor.server.auth.jwt)
+
+
 }

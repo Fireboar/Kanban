@@ -5,6 +5,7 @@ import ch.hslu.kanban.domain.entity.Task
 object TaskMapper {
     fun map(
         id: Long,
+        userId: Long,
         title: String,
         description: String?,
         dueDate: String,
@@ -12,6 +13,7 @@ object TaskMapper {
         status: String?
     ): Task = Task(
         id = id,
+        userId = userId,
         title = title,
         description = description ?: "",
         dueDate = dueDate,
@@ -19,4 +21,3 @@ object TaskMapper {
         status = status ?: "To Do"
     )
 }
-
